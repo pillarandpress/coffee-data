@@ -23,27 +23,27 @@ jobs:
           -H "Content-Type: application/json" \
           -o notion.json
 
-      - name: Debug Notion output
-  run: |
-    node <<'EOF'
-    const fs = require('fs');
-    const raw = JSON.parse(fs.readFileSync('notion.json'));
+      - name: Debug Notion properties
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const raw = JSON.parse(fs.readFileSync('notion.json'));
 
-    // dump first row properties so we can see exact names
-    const first = raw.results?.[0]?.properties || {};
+          const first = raw.results?.[0]?.properties || {};
 
-    fs.writeFileSync(
-      "debug-properties.json",
-      JSON.stringify(first, null, 2)
-    );
+          fs.writeFileSync(
+            "debug-properties.json",
+            JSON.stringify(first, null, 2)
+          );
 
-    // still create file so workflow doesn't fail
-    fs.writeFileSync("coffee-homepage.json", "[]");
-    EOF
-      - name: Commit updated JSON
+          // also create placeholder so workflow continues
+          fs.writeFileSync("coffee-homepage.json", "[]");
+          EOF
+
+      - name: Commit debug output
         run: |
           git config user.name "Notion Sync"
           git config user.email "sync@github.com"
-          git add coffee-homepage.json
-          git commit -m "Auto-sync coffee data" || echo "No changes"
+          git add debug-properties.json coffee-homepage.json
+          git commit -m "Debug Notion properties" || echo "No changes"
           git push
