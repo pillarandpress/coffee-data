@@ -6,8 +6,13 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
       - name: Fetch Notion data
         run: |
           curl -X POST "https://api.notion.com/v1/databases/${{ secrets.NOTION_DATABASE_ID }}/query" \
@@ -15,65 +20,58 @@ jobs:
           -H "Notion-Version: 2022-06-28" \
           -H "Content-Type: application/json" \
           -o notion.json
-- name: Convert Notion to coffee JSON
-  run: |
-    node <<'EOF'
-    const fs = require('fs');
-    const raw = JSON.parse(fs.readFileSync('notion.json'));
-
-    function getText(prop) {
-      if (!prop) return "";
-      if (prop.rich_text) return prop.rich_text[0]?.plain_text || "";
-      if (prop.title) return prop.title[0]?.plain_text || "";
-      if (prop.formula?.string) return prop.formula.string;
-      if (prop.formula?.number) return String(prop.formula.number);
-      if (prop.url) return prop.url;
-      return "";
-    }
-
-    function getFile(prop) {
-      return (
-        prop?.files?.[0]?.file?.url ||
-        prop?.files?.[0]?.external?.url ||
-        ""
-      );
-    }
-
-    function getCheckbox(prop) {
-      return prop?.checkbox || false;
-    }
-
-    function getDate(prop, fallback) {
-      return prop?.date?.start || fallback;
-    }
-
-    const coffees = raw.results
-      .map(page => {
-        const p = page.properties;
-
-        return {
-          "Coffee Name": getText(p["Coffee Name"]),
-          "Roaster Name & Location": getText(p["Roaster Name & Location"]),
-          "Origin & Region": getText(p["Origin & Region"]),
-          "More on Origin": getText(p["More on Origin"]),
-          "Altitude Range": getText(p["Altitude Range"]),
-          "Variety & Process": getText(p["Variety & Process"]),
-          "Cover": getFile(p["Cover"]),
-          "Created": getDate(p["Created"], page.created_time),
-          "About the Coffee": getText(p["About the Coffee"]),
-          "Roaster Recognition & Awards": getText(p["Roaster Recognition & Awards"]),
-          "More from the Drawdown": getText(p["More from the Drawdown"]),
-          "Publish": getCheckbox(p["Publish"]),
-          "Featured": getCheckbox(p["Featured"])
-        };
-      })
-      .filter(c => c["Publish"]);
-
-    fs.writeFileSync(
-      "coffee-homepage.json",
-      JSON.stringify(coffees, null, 2)
-    );
-    EOF
+      - name: Convert Notion to coffee JSON
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const raw = JSON.parse(fs.readFileSync('notion.json'));
+          function getText(prop) {
+            if (!prop) return "";
+            if (prop.rich_text) return prop.rich_text[0]?.plain_text || "";
+            if (prop.title) return prop.title[0]?.plain_text || "";
+            if (prop.formula?.string) return prop.formula.string;
+            if (prop.formula?.number) return String(prop.formula.number);
+            if (prop.url) return prop.url;
+            return "";
+          }
+          function getFile(prop) {
+            return (
+              prop?.files?.[0]?.file?.url ||
+              prop?.files?.[0]?.external?.url ||
+              ""
+            );
+          }
+          function getCheckbox(prop) {
+            return prop?.checkbox || false;
+          }
+          function getDate(prop, fallback) {
+            return prop?.date?.start || fallback;
+          }
+          const coffees = raw.results
+            .map(page => {
+              const p = page.properties;
+              return {
+                "Coffee Name": getText(p["Coffee Name"]),
+                "Roaster Name & Location": getText(p["Roaster Name & Location"]),
+                "Origin & Region": getText(p["Origin & Region"]),
+                "More on Origin": getText(p["More on Origin"]),
+                "Altitude Range": getText(p["Altitude Range"]),
+                "Variety & Process": getText(p["Variety & Process"]),
+                "Cover": getFile(p["Cover"]),
+                "Created": getDate(p["Created"], page.created_time),
+                "About the Coffee": getText(p["About the Coffee"]),
+                "Roaster Recognition & Awards": getText(p["Roaster Recognition & Awards"]),
+                "More from the Drawdown": getText(p["More from the Drawdown"]),
+                "Publish": getCheckbox(p["Publish"]),
+                "Featured": getCheckbox(p["Featured"])
+              };
+            })
+            .filter(c => c["Publish"]);
+          fs.writeFileSync(
+            "coffee-homepage.json",
+            JSON.stringify(coffees, null, 2)
+          );
+          EOF
       - name: Commit changes
         run: |
           git config user.name "Notion Sync"
