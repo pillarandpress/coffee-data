@@ -1,61 +1,50 @@
 name: Sync Notion Coffee Data
+
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *'
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
+
     steps:
       - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-      
-      - name: Fetch Notion data with filter
+
+      - name: Fetch Notion data
         run: |
           curl -X POST "https://api.notion.com/v1/databases/${{ secrets.NOTION_DATABASE_ID }}/query" \
           -H "Authorization: Bearer ${{ secrets.NOTION_TOKEN }}" \
           -H "Notion-Version: 2022-06-28" \
           -H "Content-Type: application/json" \
-          -d '{
-            "page_size": 100,
-            "filter": {
-              "property": "Publish",
-              "checkbox": {
-                "equals": true
-              }
-            }
-          }' \
           -o notion.json
-      
+
       - name: Convert Notion to coffee JSON
         run: |
           node <<'EOF'
           const fs = require('fs');
           const raw = JSON.parse(fs.readFileSync('notion.json'));
-          
-          console.log("Total results from Notion:", raw.results?.length || 0);
-          
+
           function plainText(arr = []) {
             return (arr || []).map(t => t?.plain_text ?? "").join("");
           }
-          
+
           function getTitle(props, name) {
             return plainText(props?.[name]?.title || []) || "";
           }
-          
+
           function getFormula(props, name) {
             const f = props?.[name]?.formula;
             if (!f || !f.type) return "";
             const v = f[f.type];
             if (v === null || v === undefined) return "";
-            if (typeof v === "string" && v.trim() === "") return "";
             return typeof v === "object" ? JSON.stringify(v) : String(v);
           }
-          
+
           function getFirstFileUrl(props, name) {
             const fileObj = props?.[name]?.files?.[0];
             if (!fileObj) return "";
@@ -63,37 +52,48 @@ jobs:
             if (fileObj.type === "external") return fileObj.external?.url ?? "";
             return "";
           }
-          
+
           function getUrl(props, name) {
-            const u = props?.[name]?.url;
-            return u && u.trim() ? u.trim() : "";
+            return props?.[name]?.url || "";
           }
-          
-          const coffees = (raw.results || []).map(page => {
-            const props = page.properties || {};
-            return {
-              "Coffee Name": getTitle(props, "Coffee Name"),
-              "Roaster Name & Location": getFormula(props, "Roaster Name & Location"),
-              "Origin & Region": getFormula(props, "Origin & Region"),
-              "More on Origin": getFormula(props, "More on Origin"),
-              "Altitude Range": getFormula(props, "Altitude Range"),
-              "Variety & Process": getFormula(props, "Variety & Process"),
-              "Cover": getUrl(props, "Cover (Public URL)") || getFirstFileUrl(props, "Cover")
-            };
-          });
-          
-          console.log(`Total coffees: ${coffees.length}`);
-          console.log("Sample coffee:", JSON.stringify(coffees[0], null, 2));
-          
+
+          function getCheckbox(props, name) {
+            return props?.[name]?.checkbox || false;
+          }
+
+          function getDate(props, name, fallback) {
+            return props?.[name]?.date?.start || fallback;
+          }
+
+          const coffees = raw.results
+            .map(page => {
+              const props = page.properties || {};
+
+              return {
+                "Coffee Name": getTitle(props, "Coffee Name"),
+                "Roaster Name & Location": getFormula(props, "Roaster Name & Location"),
+                "Origin & Region": getFormula(props, "Origin & Region"),
+                "More on Origin": getFormula(props, "More on Origin"),
+                "Altitude Range": getFormula(props, "Altitude Range"),
+                "Variety & Process": getFormula(props, "Variety & Process"),
+                "Cover": getUrl(props, "Cover (Public URL)") || getFirstFileUrl(props, "Cover"),
+                "Created": getDate(props, "Created", page.created_time),
+                "About the Coffee": plainText(props?.["About the Coffee"]?.rich_text || []),
+                "Roaster Recognition & Awards": getFormula(props, "Roaster Recognition & Awards"),
+                "More from the Drawdown": getUrl(props, "More from the Drawdown"),
+                "Publish": getCheckbox(props, "Publish"),
+                "Featured": getCheckbox(props, "Featured")
+              };
+            })
+            .filter(c => c["Publish"]);
+
           fs.writeFileSync(
             "coffee-homepage.json",
             JSON.stringify(coffees, null, 2)
           );
-          
-          console.log("File written successfully");
           EOF
-      
-      - name: Commit changes
+
+      - name: Commit updated JSON
         run: |
           git config user.name "Notion Sync"
           git config user.email "sync@github.com"
