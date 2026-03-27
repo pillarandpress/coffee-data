@@ -1,17 +1,13 @@
 name: Sync Notion Coffee Data
-
 on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
-
 jobs:
   sync:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
-
       - name: Fetch Notion data
         run: |
           curl -X POST "https://api.notion.com/v1/databases/${{ secrets.NOTION_DATABASE_ID }}/query" \
@@ -19,69 +15,57 @@ jobs:
           -H "Notion-Version: 2022-06-28" \
           -H "Content-Type: application/json" \
           -o notion.json
-
-    - name: Convert Notion to coffee JSON
-  run: |
-    node <<EOF
-    const fs = require('fs');
-    const raw = JSON.parse(fs.readFileSync('notion.json'));
-
-    const coffees = raw.results
-      .map(page => {
-        const p = page.properties;
-
-        const text = (field) =>
-          p[field]?.rich_text?.[0]?.plain_text || "";
-
-        const title = (field) =>
-          p[field]?.title?.[0]?.plain_text || "";
-
-        const formula = (field) =>
-          p[field]?.formula?.string ||
-          p[field]?.formula?.number ||
-          "";
-
-        const file = (field) =>
-          p[field]?.files?.[0]?.file?.url ||
-          p[field]?.files?.[0]?.external?.url ||
-          "";
-
-        const checkbox = (field) =>
-          p[field]?.checkbox || false;
-
-        const date = (field) =>
-          p[field]?.date?.start || page.created_time;
-
-        return {
-          "Coffee Name": title("Coffee Name"),
-          "Roaster Name & Location": formula("Roaster Name & Location"),
-          "Origin & Region": formula("Origin & Region"),
-          "More on Origin": formula("More on Origin"),
-          "Altitude Range": formula("Altitude Range"),
-          "Variety & Process": formula("Variety & Process"),
-          "Cover": file("Cover"),
-          "Created": date("Created"),
-          "About the Coffee": text("About the Coffee"),
-          "Roaster Recognition & Awards": formula("Roaster Recognition & Awards"),
-          "More from the Drawdown": text("More from the Drawdown"),
-          "Publish": checkbox("Publish"),
-          "Featured": checkbox("Featured")
-        };
-      })
-
-      // only publish checked items
-      .filter(c => c["Publish"]);
-
-    fs.writeFileSync(
-      "coffee-homepage.json",
-      JSON.stringify(coffees, null, 2)
-    );
-    EOF
-
-      - name: Commit updated JSON
+      - name: Convert Notion to coffee JSON
+        run: |
+          node <<EOF
+          const fs = require('fs');
+          const raw = JSON.parse(fs.readFileSync('notion.json'));
+          const coffees = raw.results
+            .map(page => {
+              const p = page.properties;
+              const text = (field) =>
+                p[field]?.rich_text?.[0]?.plain_text || "";
+              const title = (field) =>
+                p[field]?.title?.[0]?.plain_text || "";
+              const formula = (field) =>
+                p[field]?.formula?.string ||
+                p[field]?.formula?.number ||
+                "";
+              const file = (field) =>
+                p[field]?.files?.[0]?.file?.url ||
+                p[field]?.files?.[0]?.external?.url ||
+                "";
+              const checkbox = (field) =>
+                p[field]?.checkbox || false;
+              const date = (field) =>
+                p[field]?.date?.start || page.created_time;
+              return {
+                "Coffee Name": title("Coffee Name"),
+                "Roaster Name & Location": formula("Roaster Name & Location"),
+                "Origin & Region": formula("Origin & Region"),
+                "More on Origin": formula("More on Origin"),
+                "Altitude Range": formula("Altitude Range"),
+                "Variety & Process": formula("Variety & Process"),
+                "Cover": file("Cover"),
+                "Created": date("Created"),
+                "About the Coffee": text("About the Coffee"),
+                "Roaster Recognition & Awards": formula("Roaster Recognition & Awards"),
+                "More from the Drawdown": text("More from the Drawdown"),
+                "Publish": checkbox("Publish"),
+                "Featured": checkbox("Featured")
+              };
+            })
+            // only publish checked items
+            .filter(c => c["Publish"]);
+          fs.writeFileSync(
+            "coffee-homepage.json",
+            JSON.stringify(coffees, null, 2)
+          );
+          EOF
+      - name: Commit changes
         run: |
           git config user.name "Notion Sync"
           git config user.email "sync@github.com"
           git add coffee-homepage.json
-          git commit -m "Update coffee data" || echo "No changes"
+          git commit -m "Auto-sync coffee data" || echo "No changes"
           git push
