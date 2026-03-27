@@ -1,0 +1,425 @@
+{
+  "Roaster YouTube": {
+    "id": "%3AztL",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Origin": {
+    "id": "%3BhVi",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Roaster City": {
+    "id": "%3EGI%5C",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Date": {
+    "id": "%3FMHd",
+    "type": "date",
+    "date": null
+  },
+  "Roaster Instagram": {
+    "id": "%40kUb",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Tags": {
+    "id": "%40vJg",
+    "type": "relation",
+    "relation": [],
+    "has_more": false
+  },
+  "Roaster Recognition & Awards": {
+    "id": "A%3BAL",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Roaster Images": {
+    "id": "BDm%5D",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Region": {
+    "id": "CFxq",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Description": {
+    "id": "G%3C%3E%3C",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "Cover (Public URL)": {
+    "id": "GfKQ",
+    "type": "url",
+    "url": "https://images.squarespace-cdn.com/content/69af0cac1b048c64c0c2e18a/1773238311498-K9R7EVHWZHX55RPM1FTB/Heart-Eyes.png?content-type=image%2Fpng"
+  },
+  "Formula": {
+    "id": "Gm%3DG",
+    "type": "formula",
+    "formula": {
+      "type": "string",
+      "string": null
+    }
+  },
+  "Publish": {
+    "id": "HXGf",
+    "type": "checkbox",
+    "checkbox": true
+  },
+  "Coffee Media": {
+    "id": "HiV%3A",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Status": {
+    "id": "I%7DFK",
+    "type": "status",
+    "status": {
+      "id": "d697a64a-1a86-4853-8811-0f8f5de3083c",
+      "name": "Published",
+      "color": "default"
+    }
+  },
+  "Meta Title": {
+    "id": "KHc%5B",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "Meta Description": {
+    "id": "KVIF",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "Origin & Region": {
+    "id": "KZKR",
+    "type": "formula",
+    "formula": {
+      "type": "string",
+      "string": ""
+    }
+  },
+  "Roaster LinkedIn": {
+    "id": "MAl%40",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Featured": {
+    "id": "MP%7Bw",
+    "type": "checkbox",
+    "checkbox": false
+  },
+  "Linked Roaster": {
+    "id": "NA%7B%40",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "More from the Drawdown": {
+    "id": "Nwup",
+    "type": "url",
+    "url": null
+  },
+  "Meta Keywords": {
+    "id": "Nxtl",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "About the Coffee": {
+    "id": "P%3E%5EJ",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Cover": {
+    "id": "P_%5Cx",
+    "type": "files",
+    "files": [
+      {
+        "name": "image.png",
+        "type": "file",
+        "file": {
+          "url": "https://prod-files-secure.s3.us-west-2.amazonaws.com/494e066b-1c55-4e2f-8863-491e981cb8c8/ee6235d8-a3dc-4000-bc44-13c9ec710f66/image.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZI2LB466TI5FLZVT%2F20260327%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260327T230522Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEB4aCXVzLXdlc3QtMiJHMEUCIFct%2B3eB4sDcXCYeutToqJRDSKHdHFtkCcAfHnuORNmHAiEA4WL3IyLVz1pPmQhWbviTtdAGkrHxlrO80arkCK3jymEqiAQI5%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAAGgw2Mzc0MjMxODM4MDUiDGUh4JyW1I31dJlxYCrcA6o0Nsg2lKh5V%2FBOQyQAacCnW8uys%2B7No5e%2FZjCLXaBFQjdXGoJGD%2FM5CFVph6h8Ba1fKW87R%2FU79sFDSObm%2FO3oCmKgsVEdAZSAJAxZVTZwLVNnY5tkImw9jLsk2tihShzNP95AuRlv4WCihfe5uaJJw1T9kBkvJSipEHRC6BGjSGNsUkfM%2FKUr1DbMdVQSxgk0Qr9Ht5JCmKWzoEOSUypIHpSPA%2FO1BODNVCFYx%2B87ZHZh6f7BLznN%2BnLNktiFYnVh326bQ5IV6zYRhv7jYDGT5h0yaHzKb4sfUHN6kF9FGSccCcKIwr2hBqo4uHO9R1MT005RPubuQetqrdezOhKHm5z1Ssw%2Bdi32O4M%2BS1acCiEQrKYhyLxCRtbY59N4o%2B0n7%2Bs71YkHobAzzOlhzcCTtIGp7BPkdViDeMKgEfw%2Bm6MjuziXlfkOPHppdufa14IFE2JAy%2BYeh0Wo%2BjxzAcNTqPa%2B582aT8N39oLSFJZShQVH7WK7EC47DfDFGCsX5JdicmyXC8PYlBSldzFiTnb%2BPciD6OdQsT%2Fcyl4BcxkbORVVNjtgzy%2B0nz6e%2BgkrfGQ69Ks3KyswzneJXDirq8deD3%2FKEmf0sFqu5t%2FTclTrvLcPavbbrEmbp2WnMPv%2Bm84GOqUBTbBS4ixcTY6lJCjeJ1NbKL%2BuqvCFpmguyJVD34kZa%2F3TjtMdEGHYgT4KMzHmHeQxNZfxhpFJQKlVMwjObPYHX7nwAs5wQ4095N8gKyH9FuRlMIMXmF4n0Vwi8SblMBwRKSxz4WGECHG%2Fj4iWMh5ly7Z8FQTds4pPwhCTY39vdffuKLz6p%2Br0p%2Fkj3NNZT6wx667VrBC%2Fj948dmtAIBm8rBNlgMIE&X-Amz-Signature=bb9fa0a988280d39ec117b42569b2e8e80c9b2b613e6b5d83034124b14e6872a&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject",
+          "expiry_time": "2026-03-28T00:05:22.181Z"
+        }
+      }
+    ]
+  },
+  "Roaster About": {
+    "id": "QL%40%5B",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Summary": {
+    "id": "QyY%3D",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "Details": {
+    "id": "RSW_",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "Last edited time": {
+    "id": "T%3D%5CF",
+    "type": "last_edited_time",
+    "last_edited_time": "2026-03-27T15:56:00.000Z"
+  },
+  "Linked Profile": {
+    "id": "U_KM",
+    "type": "relation",
+    "relation": [],
+    "has_more": false
+  },
+  "Awards": {
+    "id": "UuvR",
+    "type": "formula",
+    "formula": {
+      "type": "string",
+      "string": null
+    }
+  },
+  "Link": {
+    "id": "W%3AKP",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Roaster Name & Location": {
+    "id": "X%40%60D",
+    "type": "formula",
+    "formula": {
+      "type": "string",
+      "string": "No roaster linked"
+    }
+  },
+  "Roaster Facebook": {
+    "id": "X%60kD",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Altitude": {
+    "id": "YBYY",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Homepage": {
+    "id": "ZVVA",
+    "type": "checkbox",
+    "checkbox": true
+  },
+  "Slug": {
+    "id": "%5DYMa",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "Variety & Process": {
+    "id": "%5Edgq",
+    "type": "formula",
+    "formula": {
+      "type": "string",
+      "string": ""
+    }
+  },
+  "Varieties": {
+    "id": "_yzq",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Processing": {
+    "id": "%60ZO%3C",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "About": {
+    "id": "gYAM",
+    "type": "rich_text",
+    "rich_text": []
+  },
+  "More on Origin": {
+    "id": "gnSx",
+    "type": "formula",
+    "formula": {
+      "type": "string",
+      "string": ""
+    }
+  },
+  "Origin Details": {
+    "id": "iVTv",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Altitude Range": {
+    "id": "kRLB",
+    "type": "formula",
+    "formula": {
+      "type": "string",
+      "string": null
+    }
+  },
+  "Roaster Link": {
+    "id": "nDJ%40",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Roaster": {
+    "id": "smAV",
+    "type": "relation",
+    "relation": [],
+    "has_more": false
+  },
+  "Roaster Logo": {
+    "id": "tHY%3C",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Roaster URL": {
+    "id": "uruf",
+    "type": "url",
+    "url": "https://monogramcoffee.com"
+  },
+  "Content Pipeline": {
+    "id": "ynqn",
+    "type": "relation",
+    "relation": [],
+    "has_more": false
+  },
+  "Roast Level": {
+    "id": "yy%3E%40",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Roaster Country": {
+    "id": "~%3AeG",
+    "type": "rollup",
+    "rollup": {
+      "type": "array",
+      "array": [],
+      "function": "show_original"
+    }
+  },
+  "Created time": {
+    "id": "~RmY",
+    "type": "created_time",
+    "created_time": "2026-03-13T15:53:00.000Z"
+  },
+  "Logo": {
+    "id": "~aQ~",
+    "type": "files",
+    "files": [
+      {
+        "name": "image.png",
+        "type": "file",
+        "file": {
+          "url": "https://prod-files-secure.s3.us-west-2.amazonaws.com/494e066b-1c55-4e2f-8863-491e981cb8c8/a69834d1-78a0-4b2a-ac30-33f504a0214d/image.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAZI2LB466TI5FLZVT%2F20260327%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260327T230522Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEB4aCXVzLXdlc3QtMiJHMEUCIFct%2B3eB4sDcXCYeutToqJRDSKHdHFtkCcAfHnuORNmHAiEA4WL3IyLVz1pPmQhWbviTtdAGkrHxlrO80arkCK3jymEqiAQI5%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAAGgw2Mzc0MjMxODM4MDUiDGUh4JyW1I31dJlxYCrcA6o0Nsg2lKh5V%2FBOQyQAacCnW8uys%2B7No5e%2FZjCLXaBFQjdXGoJGD%2FM5CFVph6h8Ba1fKW87R%2FU79sFDSObm%2FO3oCmKgsVEdAZSAJAxZVTZwLVNnY5tkImw9jLsk2tihShzNP95AuRlv4WCihfe5uaJJw1T9kBkvJSipEHRC6BGjSGNsUkfM%2FKUr1DbMdVQSxgk0Qr9Ht5JCmKWzoEOSUypIHpSPA%2FO1BODNVCFYx%2B87ZHZh6f7BLznN%2BnLNktiFYnVh326bQ5IV6zYRhv7jYDGT5h0yaHzKb4sfUHN6kF9FGSccCcKIwr2hBqo4uHO9R1MT005RPubuQetqrdezOhKHm5z1Ssw%2Bdi32O4M%2BS1acCiEQrKYhyLxCRtbY59N4o%2B0n7%2Bs71YkHobAzzOlhzcCTtIGp7BPkdViDeMKgEfw%2Bm6MjuziXlfkOPHppdufa14IFE2JAy%2BYeh0Wo%2BjxzAcNTqPa%2B582aT8N39oLSFJZShQVH7WK7EC47DfDFGCsX5JdicmyXC8PYlBSldzFiTnb%2BPciD6OdQsT%2Fcyl4BcxkbORVVNjtgzy%2B0nz6e%2BgkrfGQ69Ks3KyswzneJXDirq8deD3%2FKEmf0sFqu5t%2FTclTrvLcPavbbrEmbp2WnMPv%2Bm84GOqUBTbBS4ixcTY6lJCjeJ1NbKL%2BuqvCFpmguyJVD34kZa%2F3TjtMdEGHYgT4KMzHmHeQxNZfxhpFJQKlVMwjObPYHX7nwAs5wQ4095N8gKyH9FuRlMIMXmF4n0Vwi8SblMBwRKSxz4WGECHG%2Fj4iWMh5ly7Z8FQTds4pPwhCTY39vdffuKLz6p%2Br0p%2Fkj3NNZT6wx667VrBC%2Fj948dmtAIBm8rBNlgMIE&X-Amz-Signature=b8211fce1e0791974eb639b1420464b491e9da4340993c9023f61912c0a105c9&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject",
+          "expiry_time": "2026-03-28T00:05:22.234Z"
+        }
+      }
+    ]
+  },
+  "Coffee Name": {
+    "id": "title",
+    "type": "title",
+    "title": [
+      {
+        "type": "text",
+        "text": {
+          "content": "Heart Eyes",
+          "link": null
+        },
+        "annotations": {
+          "bold": false,
+          "italic": false,
+          "strikethrough": false,
+          "underline": false,
+          "code": false,
+          "color": "default"
+        },
+        "plain_text": "Heart Eyes",
+        "href": null
+      }
+    ]
+  }
+}
