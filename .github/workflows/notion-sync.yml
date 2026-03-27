@@ -30,7 +30,7 @@ jobs:
           const raw = JSON.parse(fs.readFileSync('notion.json'));
 
           function plainText(arr = []) {
-            return (arr || []).map(t => t?.plain_text ?? "").join("");
+            return arr.map(t => t?.plain_text ?? "").join("");
           }
 
           function getTitle(props, name) {
@@ -41,37 +41,35 @@ jobs:
             const f = props?.[name]?.formula;
             if (!f || !f.type) return "";
             const v = f[f.type];
+            if (v == null) return "";
 
             if (Array.isArray(v)) {
               return v.map(x => x?.plain_text || "").join("");
             }
 
-            if (typeof v === "object" && v !== null) {
+            if (typeof v === "object") {
               return v.plain_text || "";
             }
 
-            return v || "";
+            return String(v);
           }
 
-          function getRollup(props, name) {
+          function getRollupRich(props, name) {
             const r = props?.[name]?.rollup;
-            if (!r) return "";
+            if (!r || r.type !== "array") return "";
 
-            if (r.type === "array") {
-              return r.array
-                .map(item => {
-                  if (item?.plain_text) return item.plain_text;
-                  if (item?.name) return item.name;
-                  if (item?.title) return plainText(item.title);
-                  if (item?.rich_text) return plainText(item.rich_text);
-                  return "";
-                })
-                .filter(Boolean)
-                .join(", ");
-            }
-
-            if (r.type === "string") return r.string || "";
-            return "";
+            return r.array
+              .map(item => {
+                if (item?.rich_text) {
+                  return item.rich_text.map(t => t.plain_text).join("");
+                }
+                if (item?.title) {
+                  return item.title.map(t => t.plain_text).join("");
+                }
+                return "";
+              })
+              .filter(Boolean)
+              .join(" ");
           }
 
           function getFile(props, name) {
@@ -98,11 +96,12 @@ jobs:
                 "Altitude Range": getFormula(props, "Altitude Range"),
                 "Variety & Process": getFormula(props, "Variety & Process"),
                 "Cover": getUrl(props, "Cover (Public URL)") || getFile(props, "Cover"),
-                "About the Coffee": getRollup(props, "About the Coffee"),
-                "Roaster Recognition & Awards": getRollup(props, "Roaster Recognition & Awards"),
+                "About the Coffee": getRollupRich(props, "About the Coffee"),
+                "Roaster Recognition & Awards": getRollupRich(props, "Roaster Recognition & Awards"),
                 "More from the Drawdown": getUrl(props, "More from the Drawdown"),
                 "Publish": props?.["Publish"]?.checkbox || false,
-                "Featured": props?.["Featured"]?.checkbox || false
+                "Featured": props?.["Featured"]?.checkbox || false,
+                "Created": page.created_time
               };
             })
             .filter(c => c["Publish"]);
