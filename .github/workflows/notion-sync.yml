@@ -13,18 +13,34 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
-      - name: Fetch Notion data
+      
+      - name: Fetch Notion data with filter
         run: |
           curl -X POST "https://api.notion.com/v1/databases/${{ secrets.NOTION_DATABASE_ID }}/query" \
           -H "Authorization: Bearer ${{ secrets.NOTION_TOKEN }}" \
           -H "Notion-Version: 2022-06-28" \
           -H "Content-Type: application/json" \
+          -d '{
+            "page_size": 100,
+            "filter": {
+              "property": "Publish",
+              "checkbox": {
+                "equals": true
+              }
+            }
+          }' \
           -o notion.json
+          
+          echo "Fetched data, file size:"
+          ls -lh notion.json
+          
       - name: Convert Notion to coffee JSON
         run: |
           node <<'EOF'
           const fs = require('fs');
           const raw = JSON.parse(fs.readFileSync('notion.json'));
+          
+          console.log("Total results from Notion:", raw.results?.length || 0);
           
           function plainText(arr = []) {
             return (arr || []).map(t => t?.plain_text ?? "").join("");
@@ -64,32 +80,41 @@ jobs:
             return props?.[name]?.date?.start || fallback;
           }
           
-          const coffees = raw.results
-            .map(page => {
-              const props = page.properties || {};
-              return {
-                "Coffee Name": getTitle(props, "Coffee Name"),
-                "Roaster Name & Location": getFormula(props, "Roaster Name & Location"),
-                "Origin & Region": getFormula(props, "Origin & Region"),
-                "More on Origin": getFormula(props, "More on Origin"),
-                "Altitude Range": getFormula(props, "Altitude Range"),
-                "Variety & Process": getFormula(props, "Variety & Process"),
-                "Cover": getUrl(props, "Cover (Public URL)") || getFirstFileUrl(props, "Cover"),
-                "Created": getDate(props, "Created", page.created_time),
-                "About the Coffee": plainText(props?.["About the Coffee"]?.rich_text || []),
-                "Roaster Recognition & Awards": getFormula(props, "Roaster Recognition & Awards"),
-                "More from the Drawdown": getUrl(props, "More from the Drawdown"),
-                "Publish": getCheckbox(props, "Publish"),
-                "Featured": getCheckbox(props, "Featured")
-              };
-            })
-            .filter(c => c["Publish"]);
+          const coffees = (raw.results || []).map(page => {
+            const props = page.properties || {};
+            const coffee = {
+              "Coffee Name": getTitle(props, "Coffee Name"),
+              "Roaster Name & Location": getFormula(props, "Roaster Name & Location"),
+              "Origin & Region": getFormula(props, "Origin & Region"),
+              "More on Origin": getFormula(props, "More on Origin"),
+              "Altitude Range": getFormula(props, "Altitude Range"),
+              "Variety & Process": getFormula(props, "Variety & Process"),
+              "Cover": getUrl(props, "Cover (Public URL)") || getFirstFileUrl(props, "Cover"),
+              "Created": getDate(props, "Created", page.created_time),
+              "About the Coffee": plainText(props?.["About the Coffee"]?.rich_text || []),
+              "Roaster Recognition & Awards": getFormula(props, "Roaster Recognition & Awards"),
+              "More from the Drawdown": getUrl(props, "More from the Drawdown"),
+              "Publish": getCheckbox(props, "Publish"),
+              "Featured": getCheckbox(props, "Featured")
+            };
+            
+            console.log("Sample coffee:", coffee["Coffee Name"]);
+            console.log("  Roaster:", coffee["Roaster Name & Location"]);
+            console.log("  Origin:", coffee["Origin & Region"]);
+            
+            return coffee;
+          });
+          
+          console.log(`Total coffees: ${coffees.length}`);
           
           fs.writeFileSync(
             "coffee-homepage.json",
             JSON.stringify(coffees, null, 2)
           );
+          
+          console.log("File written successfully");
           EOF
+      
       - name: Commit changes
         run: |
           git config user.name "Notion Sync"
