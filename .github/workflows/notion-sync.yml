@@ -23,27 +23,104 @@ jobs:
           -H "Content-Type: application/json" \
           -o notion.json
 
-      - name: Debug Notion properties
+      - name: Convert Notion to coffee JSON
         run: |
           node <<'EOF'
           const fs = require('fs');
           const raw = JSON.parse(fs.readFileSync('notion.json'));
 
-          const first = raw.results?.[0]?.properties || {};
+          function plainText(arr = []) {
+            return arr.map(t => t?.plain_text ?? "").join("");
+          }
+
+          function getTitle(p, name) {
+            return plainText(p?.[name]?.title || []);
+          }
+
+          function getFormula(p, name) {
+            const f = p?.[name]?.formula;
+            if (!f || !f.type) return "";
+            const v = f[f.type];
+            if (v == null) return "";
+            return typeof v === "object" ? JSON.stringify(v) : String(v);
+          }
+
+          function getRollup(p, name) {
+            const r = p?.[name]?.rollup;
+            if (!r) return "";
+
+            if (r.type === "array") {
+              return r.array
+                .map(v =>
+                  v?.plain_text ||
+                  v?.name ||
+                  v?.title?.[0]?.plain_text ||
+                  ""
+                )
+                .filter(Boolean)
+                .join(", ");
+            }
+
+            if (r.type === "string") return r.string || "";
+            return "";
+          }
+
+          function getRich(p, name) {
+            return plainText(p?.[name]?.rich_text || []);
+          }
+
+          function getUrl(p, name) {
+            return p?.[name]?.url || "";
+          }
+
+          function getFile(p, name) {
+            const f = p?.[name]?.files?.[0];
+            if (!f) return "";
+            if (f.type === "file") return f.file?.url || "";
+            if (f.type === "external") return f.external?.url || "";
+            return "";
+          }
+
+          function getCheckbox(p, name) {
+            return p?.[name]?.checkbox || false;
+          }
+
+          function getDate(p, name, fallback) {
+            return p?.[name]?.date?.start || fallback;
+          }
+
+          const coffees = raw.results
+            .map(page => {
+              const p = page.properties;
+
+              return {
+                "Coffee Name": getTitle(p, "Coffee Name"),
+                "Roaster Name & Location": getFormula(p, "Roaster Name & Location"),
+                "Origin & Region": getFormula(p, "Origin & Region"),
+                "More on Origin": getFormula(p, "More on Origin"),
+                "Altitude Range": getFormula(p, "Altitude Range"),
+                "Variety & Process": getFormula(p, "Variety & Process"),
+                "Cover": getUrl(p, "Cover (Public URL)") || getFile(p, "Cover"),
+                "Created": getDate(p, "Date", page.created_time),
+                "About the Coffee": getRollup(p, "About the Coffee"),
+                "Roaster Recognition & Awards": getRollup(p, "Roaster Recognition & Awards"),
+                "More from the Drawdown": getUrl(p, "More from the Drawdown"),
+                "Publish": getCheckbox(p, "Publish"),
+                "Featured": getCheckbox(p, "Featured")
+              };
+            })
+            .filter(c => c["Publish"]);
 
           fs.writeFileSync(
-            "debug-properties.json",
-            JSON.stringify(first, null, 2)
+            "coffee-homepage.json",
+            JSON.stringify(coffees, null, 2)
           );
-
-          // also create placeholder so workflow continues
-          fs.writeFileSync("coffee-homepage.json", "[]");
           EOF
 
-      - name: Commit debug output
+      - name: Commit updated JSON
         run: |
           git config user.name "Notion Sync"
           git config user.email "sync@github.com"
-          git add debug-properties.json coffee-homepage.json
-          git commit -m "Debug Notion properties" || echo "No changes"
+          git add coffee-homepage.json
+          git commit -m "Auto-sync coffee data" || echo "No changes"
           git push
