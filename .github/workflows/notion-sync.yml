@@ -25,45 +25,52 @@ jobs:
           node <<'EOF'
           const fs = require('fs');
           const raw = JSON.parse(fs.readFileSync('notion.json'));
-          function getText(prop) {
-            if (!prop) return "";
-            if (prop.rich_text) return prop.rich_text[0]?.plain_text || "";
-            if (prop.title) return prop.title[0]?.plain_text || "";
-            if (prop.formula?.string) return prop.formula.string;
-            if (prop.formula?.number) return String(prop.formula.number);
-            if (prop.url) return prop.url;
+          function plainText(arr = []) {
+            return (arr || []).map(t => t?.plain_text ?? "").join("");
+          }
+          function getTitle(props, name) {
+            return plainText(props?.[name]?.title || []) || "";
+          }
+          function getFormula(props, name) {
+            const f = props?.[name]?.formula;
+            if (!f || !f.type) return "";
+            const v = f[f.type];
+            if (v === null || v === undefined) return "";
+            return typeof v === "object" ? JSON.stringify(v) : String(v);
+          }
+          function getFirstFileUrl(props, name) {
+            const fileObj = props?.[name]?.files?.[0];
+            if (!fileObj) return "";
+            if (fileObj.type === "file") return fileObj.file?.url ?? "";
+            if (fileObj.type === "external") return fileObj.external?.url ?? "";
             return "";
           }
-          function getFile(prop) {
-            return (
-              prop?.files?.[0]?.file?.url ||
-              prop?.files?.[0]?.external?.url ||
-              ""
-            );
+          function getUrl(props, name) {
+            return props?.[name]?.url || "";
           }
-          function getCheckbox(prop) {
-            return prop?.checkbox || false;
+          function getCheckbox(props, name) {
+            return props?.[name]?.checkbox || false;
           }
-          function getDate(prop, fallback) {
-            return prop?.date?.start || fallback;
+          function getDate(props, name, fallback) {
+            return props?.[name]?.date?.start || fallback;
           }
           const coffees = raw.results
             .map(page => {
-              const p = page.properties;
+              const props = page.properties || {};
               return {
-                "Coffee Name": getText(p["Coffee Name"]),
-                "Roaster Name & Location": getText(p["Roaster Name & Location"]),
-                "Origin & Region": getText(p["Origin & Region"]),
-                "More on Origin": getText(p["More on Origin"]),
-                "Altitude Range": getText(p["Altitude Range"]),
-                "Variety & Process": getText(p["Variety & Process"]),
-                "Cover": getFile(p["Cover"]),
-                "Created": getDate(p["Created"], page.created_time),
-                "About the Coffee": getText(p["About the Coffee"]),
-                "Roaster Recognition & Awards": getText(p["Roaster Recognition & Awards"]),
-                "More from the Drawdown": getText(p["More from the Drawdown"]),
-                "Publish": getCheckbox(p["Publish"]),
-                "Featured": getCheckbox(p["Featured"])
+                "Coffee Name": getTitle(props, "Coffee Name"),
+                "Roaster Name & Location": getFormula(props, "Roaster Name & Location"),
+                "Origin & Region": getFormula(props, "Origin & Region"),
+                "More on Origin": getFormula(props, "More on Origin"),
+                "Altitude Range": getFormula(props, "Altitude Range"),
+                "Variety & Process": getFormula(props, "Variety & Process"),
+                "Cover": getUrl(props, "Cover (Public URL)") || getFirstFileUrl(props, "Cover"),
+                "Created": getDate(props, "Created", page.created_time),
+                "About the Coffee": plainText(props?.["About the Coffee"]?.rich_text || []),
+                "Roaster Recognition & Awards": getFormula(props, "Roaster Recognition & Awards"),
+                "More from the Drawdown": getUrl(props, "More from the Drawdown"),
+                "Publish": getCheckbox(props, "Publish"),
+                "Featured": getCheckbox(props, "Featured")
               };
             })
             .filter(c => c["Publish"]);
