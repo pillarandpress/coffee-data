@@ -25,19 +25,24 @@ jobs:
           node <<'EOF'
           const fs = require('fs');
           const raw = JSON.parse(fs.readFileSync('notion.json'));
+          
           function plainText(arr = []) {
             return (arr || []).map(t => t?.plain_text ?? "").join("");
           }
+          
           function getTitle(props, name) {
             return plainText(props?.[name]?.title || []) || "";
           }
+          
           function getFormula(props, name) {
             const f = props?.[name]?.formula;
             if (!f || !f.type) return "";
             const v = f[f.type];
             if (v === null || v === undefined) return "";
+            if (typeof v === "string" && v.trim() === "") return "";
             return typeof v === "object" ? JSON.stringify(v) : String(v);
           }
+          
           function getFirstFileUrl(props, name) {
             const fileObj = props?.[name]?.files?.[0];
             if (!fileObj) return "";
@@ -45,15 +50,20 @@ jobs:
             if (fileObj.type === "external") return fileObj.external?.url ?? "";
             return "";
           }
+          
           function getUrl(props, name) {
-            return props?.[name]?.url || "";
+            const u = props?.[name]?.url;
+            return u && u.trim() ? u.trim() : "";
           }
+          
           function getCheckbox(props, name) {
             return props?.[name]?.checkbox || false;
           }
+          
           function getDate(props, name, fallback) {
             return props?.[name]?.date?.start || fallback;
           }
+          
           const coffees = raw.results
             .map(page => {
               const props = page.properties || {};
@@ -74,6 +84,7 @@ jobs:
               };
             })
             .filter(c => c["Publish"]);
+          
           fs.writeFileSync(
             "coffee-homepage.json",
             JSON.stringify(coffees, null, 2)
