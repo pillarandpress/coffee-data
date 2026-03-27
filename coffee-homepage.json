@@ -1,0 +1,32 @@
+{
+  "count": 3,
+  "results": [
+    {
+      "Coffee Name": "Heart Eyes",
+      "Roaster Name & Location": "Monogram Coffee — Calgary AB, Canada 🇨🇦",
+      "Origin & Region": "Origin: Costa Rica 🇨🇷, Panama 🇵🇦",
+      "More on Origin": "",
+      "Altitude Range": "",
+      "Variety & Process": "Varieties: Caturra, Catuai | Processing: Washed, Natural, Anaerobic",
+      "Cover": "https://images.squarespace-cdn.com/content/69af0cac1b048c64c0c2e18a/1773238311498-K9R7EVHWZHX55RPM1FTB/Heart-Eyes.png?content-type=image%2Fpng"
+    },
+    {
+      "Coffee Name": "HACHI - TANI (谷)",
+      "Roaster Name & Location": "Native Coffee Company — Chiriqui, Panama 🇵🇦",
+      "Origin & Region": "Origin: Colombia 🇨🇴 | Region: Antioquia",
+      "More on Origin": "(Guayabillas, Bolívar)",
+      "Altitude Range": "",
+      "Variety & Process": "Varieties: Castillo® | Processing: Natural",
+      "Cover": "https://images.squarespace-cdn.com/content/69af0cac1b048c64c0c2e18a/1773241562982-IYGM6IE19AEOLQ9D78FQ/HACHI-TANI.png?content-type=image%2Fpng"
+    },
+    {
+      "Coffee Name": "Finca La Patria",
+      "Roaster Name & Location": "Rooftop Coffee Roasters — Fernie BC, Canada 🇨🇦",
+      "Origin & Region": "Origin: Mexico 🇲🇽 | Region: Chiapas",
+      "More on Origin": "(Tapachula)",
+      "Altitude Range": "Medium Altitude",
+      "Variety & Process": "Varieties: Catuai | Processing: Mosto Washed",
+      "Cover": "https://images.squarespace-cdn.com/content/69af0cac1b048c64c0c2e18a/1773241846941-ISA898KK829YLX1WY7D4/Finca_La_Patria.png?content-type=image%2Fpng"
+    }
+  ]
+}
