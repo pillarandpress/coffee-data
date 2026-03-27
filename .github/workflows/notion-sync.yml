@@ -1,126 +1,72 @@
-name: Sync Notion Coffee Data
+- name: Convert Notion to coffee JSON
+  run: |
+    node <<'EOF'
+    const fs = require('fs');
+    const raw = JSON.parse(fs.readFileSync('notion.json'));
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '*/10 * * * *'
+    function flattenRollup(arr = []) {
+      return arr.map(item => {
+        if (item.type === "rich_text") {
+          return item.rich_text.map(t => t.plain_text).join("");
+        }
+        if (item.type === "title") {
+          return item.title.map(t => t.plain_text).join("");
+        }
+        if (item.plain_text) return item.plain_text;
+        if (item.name) return item.name;
+        return "";
+      }).filter(Boolean).join(", ");
+    }
 
-jobs:
-  sync:
-    runs-on: ubuntu-latest
+    function getFormula(p, name) {
+      const f = p?.[name]?.formula;
+      if (!f) return "";
+      return f.string || f.number || "";
+    }
 
-    permissions:
-      contents: write
+    function getRollup(p, name) {
+      const r = p?.[name]?.rollup;
+      if (!r || !r.array) return "";
+      return flattenRollup(r.array);
+    }
 
-    steps:
-      - uses: actions/checkout@v3
+    function getTitle(p, name) {
+      return p?.[name]?.title?.map(t => t.plain_text).join("") || "";
+    }
 
-      - name: Fetch Notion data
-        run: |
-          curl -X POST "https://api.notion.com/v1/databases/${{ secrets.NOTION_DATABASE_ID }}/query" \
-          -H "Authorization: Bearer ${{ secrets.NOTION_TOKEN }}" \
-          -H "Notion-Version: 2022-06-28" \
-          -H "Content-Type: application/json" \
-          -o notion.json
+    function getFile(p, name) {
+      const f = p?.[name]?.files?.[0];
+      if (!f) return "";
+      return f.file?.url || f.external?.url || "";
+    }
 
-      - name: Convert Notion to coffee JSON
-        run: |
-          node <<'EOF'
-          const fs = require('fs');
-          const raw = JSON.parse(fs.readFileSync('notion.json'));
+    function getUrl(p, name) {
+      return p?.[name]?.url || "";
+    }
 
-          function plainText(arr = []) {
-            return arr.map(t => t?.plain_text ?? "").join("");
-          }
+    const coffees = raw.results
+      .map(page => {
+        const p = page.properties;
 
-          function getTitle(p, name) {
-            return plainText(p?.[name]?.title || []);
-          }
+        return {
+          "Coffee Name": getTitle(p, "Coffee Name"),
+          "Roaster Name & Location": getFormula(p, "Roaster Name & Location"),
+          "Origin & Region": getFormula(p, "Origin & Region"),
+          "More on Origin": getFormula(p, "More on Origin"),
+          "Altitude Range": getFormula(p, "Altitude Range"),
+          "Variety & Process": getFormula(p, "Variety & Process"),
+          "Cover": getUrl(p, "Cover (Public URL)") || getFile(p, "Cover"),
+          "About the Coffee": getRollup(p, "About the Coffee"),
+          "Roaster Recognition & Awards": getRollup(p, "Roaster Recognition & Awards"),
+          "More from the Drawdown": getUrl(p, "More from the Drawdown"),
+          "Publish": p?.["Publish"]?.checkbox || false,
+          "Featured": p?.["Featured"]?.checkbox || false
+        };
+      })
+      .filter(c => c["Publish"]);
 
-          function getFormula(p, name) {
-            const f = p?.[name]?.formula;
-            if (!f || !f.type) return "";
-            const v = f[f.type];
-            if (v == null) return "";
-            return typeof v === "object" ? JSON.stringify(v) : String(v);
-          }
-
-          function getRollup(p, name) {
-            const r = p?.[name]?.rollup;
-            if (!r) return "";
-
-            if (r.type === "array") {
-              return r.array
-                .map(v =>
-                  v?.plain_text ||
-                  v?.name ||
-                  v?.title?.[0]?.plain_text ||
-                  ""
-                )
-                .filter(Boolean)
-                .join(", ");
-            }
-
-            if (r.type === "string") return r.string || "";
-            return "";
-          }
-
-          function getRich(p, name) {
-            return plainText(p?.[name]?.rich_text || []);
-          }
-
-          function getUrl(p, name) {
-            return p?.[name]?.url || "";
-          }
-
-          function getFile(p, name) {
-            const f = p?.[name]?.files?.[0];
-            if (!f) return "";
-            if (f.type === "file") return f.file?.url || "";
-            if (f.type === "external") return f.external?.url || "";
-            return "";
-          }
-
-          function getCheckbox(p, name) {
-            return p?.[name]?.checkbox || false;
-          }
-
-          function getDate(p, name, fallback) {
-            return p?.[name]?.date?.start || fallback;
-          }
-
-          const coffees = raw.results
-            .map(page => {
-              const p = page.properties;
-
-              return {
-                "Coffee Name": getTitle(p, "Coffee Name"),
-                "Roaster Name & Location": getFormula(p, "Roaster Name & Location"),
-                "Origin & Region": getFormula(p, "Origin & Region"),
-                "More on Origin": getFormula(p, "More on Origin"),
-                "Altitude Range": getFormula(p, "Altitude Range"),
-                "Variety & Process": getFormula(p, "Variety & Process"),
-                "Cover": getUrl(p, "Cover (Public URL)") || getFile(p, "Cover"),
-                "Created": getDate(p, "Date", page.created_time),
-                "About the Coffee": getRollup(p, "About the Coffee"),
-                "Roaster Recognition & Awards": getRollup(p, "Roaster Recognition & Awards"),
-                "More from the Drawdown": getUrl(p, "More from the Drawdown"),
-                "Publish": getCheckbox(p, "Publish"),
-                "Featured": getCheckbox(p, "Featured")
-              };
-            })
-            .filter(c => c["Publish"]);
-
-          fs.writeFileSync(
-            "coffee-homepage.json",
-            JSON.stringify(coffees, null, 2)
-          );
-          EOF
-
-      - name: Commit updated JSON
-        run: |
-          git config user.name "Notion Sync"
-          git config user.email "sync@github.com"
-          git add coffee-homepage.json
-          git commit -m "Auto-sync coffee data" || echo "No changes"
-          git push
+    fs.writeFileSync(
+      "coffee-homepage.json",
+      JSON.stringify(coffees, null, 2)
+    );
+    EOF
