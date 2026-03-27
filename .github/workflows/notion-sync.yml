@@ -29,63 +29,80 @@ jobs:
           const fs = require('fs');
           const raw = JSON.parse(fs.readFileSync('notion.json'));
 
-          function flattenRollup(arr = []) {
-            return arr.map(item => {
-              if (item.type === "rich_text") {
-                return item.rich_text.map(t => t.plain_text).join("");
-              }
-              if (item.type === "title") {
-                return item.title.map(t => t.plain_text).join("");
-              }
-              if (item.plain_text) return item.plain_text;
-              if (item.name) return item.name;
-              return "";
-            }).filter(Boolean).join(", ");
+          function plainText(arr = []) {
+            return (arr || []).map(t => t?.plain_text ?? "").join("");
           }
 
-          function getFormula(p, name) {
-            const f = p?.[name]?.formula;
+          function getTitle(props, name) {
+            return plainText(props?.[name]?.title || []);
+          }
+
+          function getFormula(props, name) {
+            const f = props?.[name]?.formula;
+            if (!f || !f.type) return "";
+            const v = f[f.type];
+
+            if (Array.isArray(v)) {
+              return v.map(x => x?.plain_text || "").join("");
+            }
+
+            if (typeof v === "object" && v !== null) {
+              return v.plain_text || "";
+            }
+
+            return v || "";
+          }
+
+          function getRollup(props, name) {
+            const r = props?.[name]?.rollup;
+            if (!r) return "";
+
+            if (r.type === "array") {
+              return r.array
+                .map(item => {
+                  if (item?.plain_text) return item.plain_text;
+                  if (item?.name) return item.name;
+                  if (item?.title) return plainText(item.title);
+                  if (item?.rich_text) return plainText(item.rich_text);
+                  return "";
+                })
+                .filter(Boolean)
+                .join(", ");
+            }
+
+            if (r.type === "string") return r.string || "";
+            return "";
+          }
+
+          function getFile(props, name) {
+            const f = props?.[name]?.files?.[0];
             if (!f) return "";
-            return f.string || f.number || "";
+            if (f.type === "file") return f.file?.url || "";
+            if (f.type === "external") return f.external?.url || "";
+            return "";
           }
 
-          function getRollup(p, name) {
-            const r = p?.[name]?.rollup;
-            if (!r || !r.array) return "";
-            return flattenRollup(r.array);
-          }
-
-          function getTitle(p, name) {
-            return p?.[name]?.title?.map(t => t.plain_text).join("") || "";
-          }
-
-          function getFile(p, name) {
-            const f = p?.[name]?.files?.[0];
-            if (!f) return "";
-            return f.file?.url || f.external?.url || "";
-          }
-
-          function getUrl(p, name) {
-            return p?.[name]?.url || "";
+          function getUrl(props, name) {
+            return props?.[name]?.url || "";
           }
 
           const coffees = raw.results
             .map(page => {
-              const p = page.properties;
+              const props = page.properties || {};
 
               return {
-                "Coffee Name": getTitle(p, "Coffee Name"),
-                "Roaster Name & Location": getFormula(p, "Roaster Name & Location"),
-                "Origin & Region": getFormula(p, "Origin & Region"),
-                "More on Origin": getFormula(p, "More on Origin"),
-                "Altitude Range": getFormula(p, "Altitude Range"),
-                "Variety & Process": getFormula(p, "Variety & Process"),
-                "Cover": getUrl(p, "Cover (Public URL)") || getFile(p, "Cover"),
-                "About the Coffee": getRollup(p, "About the Coffee"),
-                "Roaster Recognition & Awards": getRollup(p, "Roaster Recognition & Awards"),
-                "More from the Drawdown": getUrl(p, "More from the Drawdown"),
-                "Publish": p?.["Publish"]?.checkbox || false,
-                "Featured": p?.["Featured"]?.checkbox || false
+                "Coffee Name": getTitle(props, "Coffee Name"),
+                "Roaster Name & Location": getFormula(props, "Roaster Name & Location"),
+                "Origin & Region": getFormula(props, "Origin & Region"),
+                "More on Origin": getFormula(props, "More on Origin"),
+                "Altitude Range": getFormula(props, "Altitude Range"),
+                "Variety & Process": getFormula(props, "Variety & Process"),
+                "Cover": getUrl(props, "Cover (Public URL)") || getFile(props, "Cover"),
+                "About the Coffee": getRollup(props, "About the Coffee"),
+                "Roaster Recognition & Awards": getRollup(props, "Roaster Recognition & Awards"),
+                "More from the Drawdown": getUrl(props, "More from the Drawdown"),
+                "Publish": props?.["Publish"]?.checkbox || false,
+                "Featured": props?.["Featured"]?.checkbox || false
               };
             })
             .filter(c => c["Publish"]);
