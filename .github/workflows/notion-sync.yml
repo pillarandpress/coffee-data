@@ -124,10 +124,12 @@ jobs:
           );
           EOF
 
-      - name: Commit updated JSON
-        run: |
-          git config user.name "Notion Sync"
-          git config user.email "sync@github.com"
-          git add coffee-homepage.json
-          git commit -m "Auto-sync coffee data" || echo "No changes"
-          git push
+      - name: - name: Commit updated JSON
+  run: |
+    git config user.name "Notion Sync"
+    git config user.email "sync@github.com"
+
+    git add coffee-homepage.json
+
+    git diff --cached --quiet || git commit -m "Auto-sync coffee data"
+    git push
