@@ -1,19 +1,21 @@
 name: Sync Notion Coffee Data
 
 on:
-  schedule:
-    - cron: "0 8 * * *" # runs daily (adjust if needed)
   workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * *"
 
 jobs:
   sync:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    permissions:
+      contents: write
 
-      - name: Fetch Notion data
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch + Convert Notion data
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
@@ -23,12 +25,11 @@ jobs:
 
           const NOTION_TOKEN = process.env.NOTION_TOKEN;
           const DATABASE_ID = process.env.NOTION_DATABASE_ID;
-
           const NOTION_VERSION = "2022-06-28";
 
           async function fetchAll() {
             let results = [];
-            let cursor = undefined;
+            let cursor;
 
             do {
               const res = await fetch(
@@ -38,18 +39,19 @@ jobs:
                   headers: {
                     Authorization: `Bearer ${NOTION_TOKEN}`,
                     "Notion-Version": NOTION_VERSION,
-                    "Content-Type": "application/json",
+                    "Content-Type": "application/json"
                   },
                   body: JSON.stringify({
                     start_cursor: cursor,
-                    page_size: 100,
-                  }),
+                    page_size: 100
+                  })
                 }
               );
 
               const data = await res.json();
               results.push(...data.results);
               cursor = data.has_more ? data.next_cursor : undefined;
+
             } while (cursor);
 
             return results;
@@ -59,66 +61,54 @@ jobs:
             return (arr || []).map(t => t.plain_text).join("");
           }
 
-          function getTitle(p, name) {
-            return text(p?.[name]?.title);
-          }
+          function getTitle(p, n){ return text(p?.[n]?.title); }
+          function getRich(p, n){ return text(p?.[n]?.rich_text); }
+          function getCheckbox(p, n){ return p?.[n]?.checkbox || false; }
+          function getDate(p, n){ return p?.[n]?.date?.start || ""; }
+          function getUrl(p, n){ return p?.[n]?.url || ""; }
 
-          function getRich(p, name) {
-            return text(p?.[name]?.rich_text);
-          }
-
-          function getCheckbox(p, name) {
-            return p?.[name]?.checkbox || false;
-          }
-
-          function getDate(p, name) {
-            return p?.[name]?.date?.start || "";
-          }
-
-          function getUrl(p, name) {
-            return p?.[name]?.url || "";
-          }
-
-          function getFile(p, name) {
-            const f = p?.[name]?.files?.[0];
-            if (!f) return "";
-            if (f.type === "external") return f.external.url;
-            if (f.type === "file") return f.file.url;
+          function getFile(p, n){
+            const f = p?.[n]?.files?.[0];
+            if(!f) return "";
+            if(f.type === "external") return f.external.url;
+            if(f.type === "file") return f.file.url;
             return "";
           }
 
           (async () => {
+
             const pages = await fetchAll();
 
-            const data = pages.map(page => {
-              const p = page.properties;
+            const data = pages
+              .map(page => {
 
-              return {
-                "Coffee Name": getTitle(p, "Coffee Name"),
-                "Roaster Name & Location": getRich(p, "Roaster Name & Location"),
-                "Origin & Region": getRich(p, "Origin & Region"),
-                "More on Origin": getRich(p, "More on Origin"),
-                "Altitude Range": getRich(p, "Altitude Range"),
-                "Variety & Process": getRich(p, "Variety & Process"),
-                "Cover":
-                  getFile(p, "Cover") ||
-                  getRich(p, "Cover (Public URL)"),
-                "About the Coffee": getRich(p, "About the Coffee"),
-                "Roaster Recognition & Awards":
-                  getRich(p, "Roaster Recognition & Awards") ||
-                  getRich(p, "Awards"),
-                "More from the Drawdown": getUrl(p, "More from the Drawdown"),
-                "Publish": getCheckbox(p, "Publish"),
-                "Featured": getCheckbox(p, "Featured"),
-                "Created": getDate(p, "Created"),
-                "Last Updated": page.last_edited_time,
-              };
-            });
+                const p = page.properties;
+
+                return {
+                  "Coffee Name": getTitle(p,"Coffee Name"),
+                  "Roaster Name & Location": getRich(p,"Roaster Name & Location"),
+                  "Origin & Region": getRich(p,"Origin & Region"),
+                  "More on Origin": getRich(p,"More on Origin"),
+                  "Altitude Range": getRich(p,"Altitude Range"),
+                  "Variety & Process": getRich(p,"Variety & Process"),
+                  "Cover": getFile(p,"Cover") || getRich(p,"Cover (Public URL)"),
+                  "About the Coffee": getRich(p,"About the Coffee"),
+                  "Roaster Recognition & Awards": getRich(p,"Roaster Recognition & Awards"),
+                  "More from the Drawdown": getUrl(p,"More from the Drawdown"),
+                  "Publish": getCheckbox(p,"Publish"),
+                  "Featured": getCheckbox(p,"Featured"),
+                  "Created": page.created_time,
+                  "Last Updated": page.last_edited_time
+                };
+
+              })
+              .filter(item => item.Publish);
 
             fs.writeFileSync(
-              "coffee-data.json",
+              "coffee-homepage.json",
               JSON.stringify(data, null, 2)
             );
+
           })();
           EOF
 
@@ -127,9 +117,9 @@ jobs:
           git config user.name "Notion Sync"
           git config user.email "actions@github.com"
 
-          git pull --rebase origin main
+          git pull --rebase origin main || true
 
-          git add coffee-data.json
+          git add coffee-homepage.json
           git commit -m "Auto-sync coffee data" || echo "No changes"
 
           git push
