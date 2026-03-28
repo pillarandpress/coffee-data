@@ -124,7 +124,7 @@ jobs:
           );
           EOF
 
-      - name: - name: Commit updated JSON
+      - name: Commit updated JSON
   run: |
     git config user.name "Notion Sync"
     git config user.email "sync@github.com"
