@@ -30,7 +30,7 @@ jobs:
           const raw = JSON.parse(fs.readFileSync('notion.json'));
 
           function plainText(arr = []) {
-            return arr.map(t => t?.plain_text ?? "").join("");
+            return (arr || []).map(t => t?.plain_text ?? "").join("");
           }
 
           function getTitle(props, name) {
@@ -40,18 +40,26 @@ jobs:
           function getFormula(props, name) {
             const f = props?.[name]?.formula;
             if (!f || !f.type) return "";
+
             const v = f[f.type];
-            if (v == null) return "";
+
+            if (v === null || v === undefined) return "";
+
+            if (typeof v === "string") return v;
+            if (typeof v === "number") return String(v);
+            if (typeof v === "boolean") return v ? "Yes" : "";
 
             if (Array.isArray(v)) {
-              return v.map(x => x?.plain_text || "").join("");
+              return plainText(v);
             }
 
             if (typeof v === "object") {
-              return v.plain_text || "";
+              if (v.rich_text) return plainText(v.rich_text);
+              if (v.title) return plainText(v.title);
+              if (v.plain_text) return v.plain_text;
             }
 
-            return String(v);
+            return "";
           }
 
           function getRollupRich(props, name) {
@@ -60,12 +68,8 @@ jobs:
 
             return r.array
               .map(item => {
-                if (item?.rich_text) {
-                  return item.rich_text.map(t => t.plain_text).join("");
-                }
-                if (item?.title) {
-                  return item.title.map(t => t.plain_text).join("");
-                }
+                if (item?.rich_text) return plainText(item.rich_text);
+                if (item?.title) return plainText(item.title);
                 return "";
               })
               .filter(Boolean)
