@@ -37,14 +37,6 @@ jobs:
             return plainText(p?.[n]?.title || []);
           }
 
-          function getFormula(p, n) {
-            const f = p?.[n]?.formula;
-            if (!f || !f.type) return "";
-            const v = f[f.type];
-            if (v == null) return "";
-            return typeof v === "object" ? JSON.stringify(v) : String(v);
-          }
-
           function getRollup(p, n) {
             const r = p?.[n]?.rollup;
             if (!r || r.type !== "array") return "";
@@ -54,14 +46,19 @@ jobs:
                 if (item?.rich_text) return plainText(item.rich_text);
                 if (item?.title) return plainText(item.title);
                 if (item?.plain_text) return item.plain_text;
+                if (item?.name) return item.name;
                 return "";
               })
               .filter(Boolean)
-              .join(" ");
+              .join(", ");
           }
 
-          function getRich(p, n) {
-            return plainText(p?.[n]?.rich_text || []);
+          function getFormula(p, n) {
+            const f = p?.[n]?.formula;
+            if (!f || !f.type) return "";
+            const v = f[f.type];
+            if (v == null) return "";
+            return typeof v === "object" ? JSON.stringify(v) : String(v);
           }
 
           function getFile(p, n) {
@@ -80,40 +77,39 @@ jobs:
             .map(page => {
               const p = page.properties || {};
 
+              const origin = getRollup(p,"Origin");
+              const region = getRollup(p,"Region");
+              const varieties = getRollup(p,"Varieties");
+              const processing = getRollup(p,"Processing");
+
               return {
-                "Coffee Name": getTitle(p, "Coffee Name"),
-                "Roaster Name & Location": getFormula(p, "Roaster Name & Location"),
+                "Coffee Name": getTitle(p,"Coffee Name"),
+                "Roaster Name & Location": getFormula(p,"Roaster Name & Location"),
 
                 "Origin & Region":
-                  getFormula(p, "Origin & Region") ||
-                  getRollup(p, "Origin & Region") ||
-                  getRich(p, "Origin & Region"),
+                  origin && region ? `${origin} — ${region}` :
+                  origin || region || "",
 
-                "More on Origin":
-                  getFormula(p, "More on Origin") ||
-                  getRollup(p, "More on Origin"),
+                "More on Origin": getFormula(p,"More on Origin"),
 
-                "Altitude Range":
-                  getFormula(p, "Altitude Range"),
+                "Altitude Range": getFormula(p,"Altitude Range"),
 
                 "Variety & Process":
-                  getFormula(p, "Variety & Process") ||
-                  getRollup(p, "Variety & Process") ||
-                  getRich(p, "Variety & Process"),
+                  varieties && processing ? `${varieties} • ${processing}` :
+                  varieties || processing || "",
 
                 "Cover":
-                  getUrl(p, "Cover (Public URL)") ||
-                  getFile(p, "Cover"),
+                  getUrl(p,"Cover (Public URL)") ||
+                  getFile(p,"Cover"),
 
                 "About the Coffee":
-                  getRollup(p, "About the Coffee") ||
-                  getRich(p, "About the Coffee"),
+                  getRollup(p,"About the Coffee"),
 
                 "Roaster Recognition & Awards":
-                  getRollup(p, "Roaster Recognition & Awards"),
+                  getRollup(p,"Roaster Recognition & Awards"),
 
                 "More from the Drawdown":
-                  getUrl(p, "More from the Drawdown"),
+                  getUrl(p,"More from the Drawdown"),
 
                 "Publish": p?.["Publish"]?.checkbox || false,
                 "Featured": p?.["Featured"]?.checkbox || false,
