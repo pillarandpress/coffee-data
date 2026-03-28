@@ -1,121 +1,135 @@
-name: Debug Notion Coffee Data
+name: Sync Notion Coffee Data
 
 on:
+  schedule:
+    - cron: "0 8 * * *" # runs daily (adjust if needed)
   workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Fetch Notion data
-        run: |
-          curl -X POST "https://api.notion.com/v1/databases/${{ secrets.NOTION_DATABASE_ID }}/query" \
-          -H "Authorization: Bearer ${{ secrets.NOTION_TOKEN }}" \
-          -H "Notion-Version: 2022-06-28" \
-          -H "Content-Type: application/json" \
-          -o notion.json
-
-      - name: Convert Notion to DEBUG JSON
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
           node <<'EOF'
-          const fs = require('fs');
-          const raw = JSON.parse(fs.readFileSync('notion.json'));
+          const fs = require("fs");
 
-          function plainText(arr = []) {
-            return (arr || []).map(t => t?.plain_text ?? "").join("");
-          }
+          const NOTION_TOKEN = process.env.NOTION_TOKEN;
+          const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 
-          function extractValue(prop) {
-            if (!prop) return null;
+          const NOTION_VERSION = "2022-06-28";
 
-            switch (prop.type) {
-              case "title":
-                return plainText(prop.title);
+          async function fetchAll() {
+            let results = [];
+            let cursor = undefined;
 
-              case "rich_text":
-                return plainText(prop.rich_text);
-
-              case "url":
-                return prop.url;
-
-              case "checkbox":
-                return prop.checkbox;
-
-              case "number":
-                return prop.number;
-
-              case "select":
-                return prop.select?.name || null;
-
-              case "multi_select":
-                return prop.multi_select?.map(x => x.name).join(", ");
-
-              case "date":
-                return prop.date?.start || null;
-
-              case "formula":
-                return prop.formula?.string ??
-                       prop.formula?.number ??
-                       prop.formula?.boolean ??
-                       null;
-
-              case "rollup":
-                if (prop.rollup?.array) {
-                  return prop.rollup.array.map(item => {
-                    if (item.rich_text) return plainText(item.rich_text);
-                    if (item.title) return plainText(item.title);
-                    if (item.name) return item.name;
-                    return "";
-                  }).join(", ");
+            do {
+              const res = await fetch(
+                `https://api.notion.com/v1/databases/${DATABASE_ID}/query`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${NOTION_TOKEN}`,
+                    "Notion-Version": NOTION_VERSION,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    start_cursor: cursor,
+                    page_size: 100,
+                  }),
                 }
-                return null;
+              );
 
-              case "files":
-                return prop.files?.[0]?.file?.url ||
-                       prop.files?.[0]?.external?.url ||
-                       null;
+              const data = await res.json();
+              results.push(...data.results);
+              cursor = data.has_more ? data.next_cursor : undefined;
+            } while (cursor);
 
-              case "relation":
-                return prop.relation?.map(r => r.id);
-
-              default:
-                return null;
-            }
+            return results;
           }
 
-          const debug = raw.results.map(page => {
-            const props = page.properties || {};
-            const out = {};
+          function text(arr) {
+            return (arr || []).map(t => t.plain_text).join("");
+          }
 
-            Object.keys(props).forEach(key => {
-              out[key] = extractValue(props[key]);
+          function getTitle(p, name) {
+            return text(p?.[name]?.title);
+          }
+
+          function getRich(p, name) {
+            return text(p?.[name]?.rich_text);
+          }
+
+          function getCheckbox(p, name) {
+            return p?.[name]?.checkbox || false;
+          }
+
+          function getDate(p, name) {
+            return p?.[name]?.date?.start || "";
+          }
+
+          function getUrl(p, name) {
+            return p?.[name]?.url || "";
+          }
+
+          function getFile(p, name) {
+            const f = p?.[name]?.files?.[0];
+            if (!f) return "";
+            if (f.type === "external") return f.external.url;
+            if (f.type === "file") return f.file.url;
+            return "";
+          }
+
+          (async () => {
+            const pages = await fetchAll();
+
+            const data = pages.map(page => {
+              const p = page.properties;
+
+              return {
+                "Coffee Name": getTitle(p, "Coffee Name"),
+                "Roaster Name & Location": getRich(p, "Roaster Name & Location"),
+                "Origin & Region": getRich(p, "Origin & Region"),
+                "More on Origin": getRich(p, "More on Origin"),
+                "Altitude Range": getRich(p, "Altitude Range"),
+                "Variety & Process": getRich(p, "Variety & Process"),
+                "Cover":
+                  getFile(p, "Cover") ||
+                  getRich(p, "Cover (Public URL)"),
+                "About the Coffee": getRich(p, "About the Coffee"),
+                "Roaster Recognition & Awards":
+                  getRich(p, "Roaster Recognition & Awards") ||
+                  getRich(p, "Awards"),
+                "More from the Drawdown": getUrl(p, "More from the Drawdown"),
+                "Publish": getCheckbox(p, "Publish"),
+                "Featured": getCheckbox(p, "Featured"),
+                "Created": getDate(p, "Created"),
+                "Last Updated": page.last_edited_time,
+              };
             });
 
-            out["_created"] = page.created_time;
-            out["_lastEdited"] = page.last_edited_time;
-
-            return out;
-          });
-
-          fs.writeFileSync(
-            "coffee-debug.json",
-            JSON.stringify(debug, null, 2)
-          );
+            fs.writeFileSync(
+              "coffee-data.json",
+              JSON.stringify(data, null, 2)
+            );
+          })();
           EOF
 
-      - name: Commit debug JSON
+      - name: Commit updated JSON
         run: |
-          git config user.name "Notion Debug"
-          git config user.email "debug@github.com"
+          git config user.name "Notion Sync"
+          git config user.email "actions@github.com"
 
-          git add coffee-debug.json
-          git diff --cached --quiet || git commit -m "Debug Notion fields"
+          git pull --rebase origin main
 
-          git pull --rebase origin main || true
-          git push origin main
+          git add coffee-data.json
+          git commit -m "Auto-sync coffee data" || echo "No changes"
+
+          git push
