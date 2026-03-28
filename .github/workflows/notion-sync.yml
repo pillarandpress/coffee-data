@@ -110,4 +110,6 @@ jobs:
 
           git add coffee-homepage.json
           git diff --cached --quiet || git commit -m "Auto-sync coffee data"
-          git push
+
+          git pull --rebase origin main || true
+          git push origin main
