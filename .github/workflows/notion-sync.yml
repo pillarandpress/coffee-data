@@ -77,43 +77,38 @@ jobs:
             .map(page => {
               const p = page.properties || {};
 
-              const origin = getRollup(p,"Origin");
-              const region = getRollup(p,"Region");
-              const varieties = getRollup(p,"Varieties");
-              const processing = getRollup(p,"Processing");
+              const origin = getRollup(p, "Origin");
+              const region = getRollup(p, "Region");
+              const varieties = getRollup(p, "Varieties");
+              const processing = getRollup(p, "Processing");
 
               return {
-                "Coffee Name": getTitle(p,"Coffee Name"),
-                "Roaster Name & Location": getFormula(p,"Roaster Name & Location"),
+                "Coffee Name": getTitle(p, "Coffee Name"),
+                "Roaster Name & Location": getFormula(p, "Roaster Name & Location"),
 
                 "Origin & Region":
                   origin && region ? `${origin} — ${region}` :
                   origin || region || "",
 
-                "More on Origin": getFormula(p,"More on Origin"),
-
-                "Altitude Range": getFormula(p,"Altitude Range"),
+                "More on Origin": getFormula(p, "More on Origin"),
+                "Altitude Range": getFormula(p, "Altitude Range"),
 
                 "Variety & Process":
                   varieties && processing ? `${varieties} • ${processing}` :
                   varieties || processing || "",
 
                 "Cover":
-                  getUrl(p,"Cover (Public URL)") ||
-                  getFile(p,"Cover"),
+                  getUrl(p, "Cover (Public URL)") ||
+                  getFile(p, "Cover"),
 
-                "About the Coffee":
-                  getRollup(p,"About the Coffee"),
-
-                "Roaster Recognition & Awards":
-                  getRollup(p,"Roaster Recognition & Awards"),
-
-                "More from the Drawdown":
-                  getUrl(p,"More from the Drawdown"),
+                "About the Coffee": getRollup(p, "About the Coffee"),
+                "Roaster Recognition & Awards": getRollup(p, "Roaster Recognition & Awards"),
+                "More from the Drawdown": getUrl(p, "More from the Drawdown"),
 
                 "Publish": p?.["Publish"]?.checkbox || false,
                 "Featured": p?.["Featured"]?.checkbox || false,
-                "Created": page.created_time
+                "Created": page.created_time,
+                "Last Updated": new Date().toISOString()
               };
             })
             .filter(c => c["Publish"]);
@@ -125,11 +120,11 @@ jobs:
           EOF
 
       - name: Commit updated JSON
-  run: |
-    git config user.name "Notion Sync"
-    git config user.email "sync@github.com"
+        run: |
+          git config user.name "Notion Sync"
+          git config user.email "sync@github.com"
 
-    git add coffee-homepage.json
+          git add coffee-homepage.json
 
-    git diff --cached --quiet || git commit -m "Auto-sync coffee data"
-    git push
+          git diff --cached --quiet || git commit -m "Auto-sync coffee data"
+          git push
