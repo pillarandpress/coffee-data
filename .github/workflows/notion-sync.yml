@@ -33,78 +33,90 @@ jobs:
             return (arr || []).map(t => t?.plain_text ?? "").join("");
           }
 
-          function getTitle(props, name) {
-            return plainText(props?.[name]?.title || []);
+          function getTitle(p, n) {
+            return plainText(p?.[n]?.title || []);
           }
 
-          function getFormula(props, name) {
-            const f = props?.[name]?.formula;
+          function getFormula(p, n) {
+            const f = p?.[n]?.formula;
             if (!f || !f.type) return "";
-
             const v = f[f.type];
-
-            if (v === null || v === undefined) return "";
-
-            if (typeof v === "string") return v;
-            if (typeof v === "number") return String(v);
-            if (typeof v === "boolean") return v ? "Yes" : "";
-
-            if (Array.isArray(v)) {
-              return plainText(v);
-            }
-
-            if (typeof v === "object") {
-              if (v.rich_text) return plainText(v.rich_text);
-              if (v.title) return plainText(v.title);
-              if (v.plain_text) return v.plain_text;
-            }
-
-            return "";
+            if (v == null) return "";
+            return typeof v === "object" ? JSON.stringify(v) : String(v);
           }
 
-          function getRollupRich(props, name) {
-            const r = props?.[name]?.rollup;
+          function getRollup(p, n) {
+            const r = p?.[n]?.rollup;
             if (!r || r.type !== "array") return "";
 
             return r.array
               .map(item => {
                 if (item?.rich_text) return plainText(item.rich_text);
                 if (item?.title) return plainText(item.title);
+                if (item?.plain_text) return item.plain_text;
                 return "";
               })
               .filter(Boolean)
               .join(" ");
           }
 
-          function getFile(props, name) {
-            const f = props?.[name]?.files?.[0];
+          function getRich(p, n) {
+            return plainText(p?.[n]?.rich_text || []);
+          }
+
+          function getFile(p, n) {
+            const f = p?.[n]?.files?.[0];
             if (!f) return "";
             if (f.type === "file") return f.file?.url || "";
             if (f.type === "external") return f.external?.url || "";
             return "";
           }
 
-          function getUrl(props, name) {
-            return props?.[name]?.url || "";
+          function getUrl(p, n) {
+            return p?.[n]?.url || "";
           }
 
           const coffees = raw.results
             .map(page => {
-              const props = page.properties || {};
+              const p = page.properties || {};
 
               return {
-                "Coffee Name": getTitle(props, "Coffee Name"),
-                "Roaster Name & Location": getFormula(props, "Roaster Name & Location"),
-                "Origin & Region": getFormula(props, "Origin & Region"),
-                "More on Origin": getFormula(props, "More on Origin"),
-                "Altitude Range": getFormula(props, "Altitude Range"),
-                "Variety & Process": getFormula(props, "Variety & Process"),
-                "Cover": getUrl(props, "Cover (Public URL)") || getFile(props, "Cover"),
-                "About the Coffee": getRollupRich(props, "About the Coffee"),
-                "Roaster Recognition & Awards": getRollupRich(props, "Roaster Recognition & Awards"),
-                "More from the Drawdown": getUrl(props, "More from the Drawdown"),
-                "Publish": props?.["Publish"]?.checkbox || false,
-                "Featured": props?.["Featured"]?.checkbox || false,
+                "Coffee Name": getTitle(p, "Coffee Name"),
+                "Roaster Name & Location": getFormula(p, "Roaster Name & Location"),
+
+                "Origin & Region":
+                  getFormula(p, "Origin & Region") ||
+                  getRollup(p, "Origin & Region") ||
+                  getRich(p, "Origin & Region"),
+
+                "More on Origin":
+                  getFormula(p, "More on Origin") ||
+                  getRollup(p, "More on Origin"),
+
+                "Altitude Range":
+                  getFormula(p, "Altitude Range"),
+
+                "Variety & Process":
+                  getFormula(p, "Variety & Process") ||
+                  getRollup(p, "Variety & Process") ||
+                  getRich(p, "Variety & Process"),
+
+                "Cover":
+                  getUrl(p, "Cover (Public URL)") ||
+                  getFile(p, "Cover"),
+
+                "About the Coffee":
+                  getRollup(p, "About the Coffee") ||
+                  getRich(p, "About the Coffee"),
+
+                "Roaster Recognition & Awards":
+                  getRollup(p, "Roaster Recognition & Awards"),
+
+                "More from the Drawdown":
+                  getUrl(p, "More from the Drawdown"),
+
+                "Publish": p?.["Publish"]?.checkbox || false,
+                "Featured": p?.["Featured"]?.checkbox || false,
                 "Created": page.created_time
               };
             })
