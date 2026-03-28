@@ -1,9 +1,7 @@
-name: Sync Notion Coffee Data
+name: Debug Notion Coffee Data
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 9 * * *'
 
 jobs:
   sync:
@@ -23,7 +21,7 @@ jobs:
           -H "Content-Type: application/json" \
           -o notion.json
 
-      - name: Convert Notion to coffee JSON
+      - name: Convert Notion to DEBUG JSON
         run: |
           node <<'EOF'
           const fs = require('fs');
@@ -33,83 +31,91 @@ jobs:
             return (arr || []).map(t => t?.plain_text ?? "").join("");
           }
 
-          function getTitle(props, name) {
-            return plainText(props?.[name]?.title || []);
-          }
+          function extractValue(prop) {
+            if (!prop) return null;
 
-          function getFormula(props, name) {
-            const f = props?.[name]?.formula;
-            if (!f || !f.type) return "";
+            switch (prop.type) {
+              case "title":
+                return plainText(prop.title);
 
-            const v = f[f.type];
+              case "rich_text":
+                return plainText(prop.rich_text);
 
-            if (v === null || v === undefined) return "";
+              case "url":
+                return prop.url;
 
-            if (typeof v === "string") return v;
-            if (typeof v === "number") return String(v);
-            if (typeof v === "boolean") return v ? "Yes" : "";
+              case "checkbox":
+                return prop.checkbox;
 
-            if (Array.isArray(v)) {
-              return v.map(x => x?.plain_text || "").join("");
+              case "number":
+                return prop.number;
+
+              case "select":
+                return prop.select?.name || null;
+
+              case "multi_select":
+                return prop.multi_select?.map(x => x.name).join(", ");
+
+              case "date":
+                return prop.date?.start || null;
+
+              case "formula":
+                return prop.formula?.string ??
+                       prop.formula?.number ??
+                       prop.formula?.boolean ??
+                       null;
+
+              case "rollup":
+                if (prop.rollup?.array) {
+                  return prop.rollup.array.map(item => {
+                    if (item.rich_text) return plainText(item.rich_text);
+                    if (item.title) return plainText(item.title);
+                    if (item.name) return item.name;
+                    return "";
+                  }).join(", ");
+                }
+                return null;
+
+              case "files":
+                return prop.files?.[0]?.file?.url ||
+                       prop.files?.[0]?.external?.url ||
+                       null;
+
+              case "relation":
+                return prop.relation?.map(r => r.id);
+
+              default:
+                return null;
             }
-
-            if (typeof v === "object") {
-              if (v.rich_text) return plainText(v.rich_text);
-              if (v.title) return plainText(v.title);
-              if (v.plain_text) return v.plain_text;
-            }
-
-            return "";
           }
 
-          function getFile(props, name) {
-            const f = props?.[name]?.files?.[0];
-            if (!f) return "";
-            if (f.type === "file") return f.file?.url || "";
-            if (f.type === "external") return f.external?.url || "";
-            return "";
-          }
+          const debug = raw.results.map(page => {
+            const props = page.properties || {};
+            const out = {};
 
-          function getUrl(props, name) {
-            return props?.[name]?.url || "";
-          }
+            Object.keys(props).forEach(key => {
+              out[key] = extractValue(props[key]);
+            });
 
-          const coffees = raw.results
-            .map(page => {
-              const props = page.properties || {};
+            out["_created"] = page.created_time;
+            out["_lastEdited"] = page.last_edited_time;
 
-              return {
-                "Coffee Name": getTitle(props, "Coffee Name"),
-                "Roaster Name & Location": getFormula(props, "Roaster Name & Location"),
-                "Origin & Region": getFormula(props, "Origin & Region"),
-                "More on Origin": getFormula(props, "More on Origin"),
-                "Altitude Range": getFormula(props, "Altitude Range"),
-                "Variety & Process": getFormula(props, "Variety & Process"),
-                "Cover": getUrl(props, "Cover (Public URL)") || getFile(props, "Cover"),
-                "About the Coffee": getFormula(props, "About the Coffee"),
-                "Roaster Recognition & Awards": getFormula(props, "Roaster Recognition & Awards"),
-                "More from the Drawdown": getUrl(props, "More from the Drawdown"),
-                "Publish": props?.["Publish"]?.checkbox || false,
-                "Featured": props?.["Featured"]?.checkbox || false,
-                "Created": page.created_time,
-                "Last Updated": new Date().toISOString()
-              };
-            })
-            .filter(c => c["Publish"]);
+            return out;
+          });
 
           fs.writeFileSync(
-            "coffee-homepage.json",
-            JSON.stringify(coffees, null, 2)
+            "coffee-debug.json",
+            JSON.stringify(debug, null, 2)
           );
           EOF
 
-      - name: Commit updated JSON
+      - name: Commit debug JSON
         run: |
-          git config user.name "Notion Sync"
-          git config user.email "sync@github.com"
+          git config user.name "Notion Debug"
+          git config user.email "debug@github.com"
 
-          git add coffee-homepage.json
-          git diff --cached --quiet || git commit -m "Auto-sync coffee data"
+          git add coffee-debug.json
+          git diff --cached --quiet || git commit -m "Debug Notion fields"
 
           git pull --rebase origin main || true
           git push origin main
