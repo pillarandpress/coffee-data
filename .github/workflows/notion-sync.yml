@@ -70,6 +70,10 @@ jobs:
             return "";
           }
 
+          function join(...vals){
+            return vals.filter(Boolean).join(" — ");
+          }
+
           (async () => {
 
             const pages = await fetchAll();
@@ -81,17 +85,49 @@ jobs:
 
                 return {
                   "Coffee Name": title(p,"Coffee Name"),
-                  "Roaster Name & Location": rich(p,"Roaster Name & Location"),
-                  "Origin & Region": rich(p,"Origin & Region"),
-                  "More on Origin": rich(p,"More on Origin"),
-                  "Altitude Range": rich(p,"Altitude Range"),
-                  "Variety & Process": rich(p,"Variety & Process"),
-                  "About the Coffee": rich(p,"About the Coffee"),
-                  "Roaster Recognition & Awards": rich(p,"Roaster Recognition & Awards"),
-                  "More from the Drawdown": url(p,"More from the Drawdown"),
-                  "Cover": file(p,"Cover"),
+
+                  "Roaster Name & Location":
+                    join(
+                      rich(p,"Coffee Roaster Name"),
+                      join(
+                        rich(p,"Coffee Roaster City"),
+                        rich(p,"Coffee Roaster Country")
+                      )
+                    ),
+
+                  "Origin & Region":
+                    join(
+                      rich(p,"Coffee Origin"),
+                      rich(p,"Coffee Region")
+                    ),
+
+                  "More on Origin": rich(p,"Origin Details"),
+
+                  "Altitude Range": rich(p,"Coffee Altitude Range"),
+
+                  "Variety & Process":
+                    join(
+                      rich(p,"Coffee Variety"),
+                      rich(p,"Coffee Processes")
+                    ),
+
+                  "About the Coffee":
+                    rich(p,"Description") ||
+                    rich(p,"Roaster Tasting Notes"),
+
+                  "Roaster Recognition & Awards":
+                    rich(p,"Roaster Awards") ||
+                    rich(p,"Roaster Awards and Recognitions"),
+
+                  "More from the Drawdown":
+                    url(p,"More from the Drawdown"),
+
+                  "Cover":
+                    url(p,"Cover Image URL") ||
+                    file(p,"Coffee Cover"),
+
                   "Featured": checkbox(p,"Featured"),
-                  "Publish": checkbox(p,"Publish"),
+                  "Publish": checkbox(p,"Published"),
                   "Created": page.created_time
                 };
 
